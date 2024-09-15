@@ -1,5 +1,6 @@
-#include "defines.h"
+#include "base.h"
 #include <d3d11.h>
+#include <d3dcompiler.h>
 
 #include "dx11.h"
 
@@ -101,4 +102,93 @@ void d3d_clear_color(D3D_Color color) {
 	const f32 color_arr[4] = { color.r, color.g, color.b, color.a };
 	d3d_render_data.device_context->OMSetRenderTargets(1, &d3d_render_data.render_target_view, nullptr);
 	d3d_render_data.device_context->ClearRenderTargetView(d3d_render_data.render_target_view, color_arr);
+}
+
+ID3D11Buffer* d3d_create_buffer(D3D11_BIND_FLAG buffer_type, void* buffer_internal_data, u32 buffer_size) {
+	D3D11_BUFFER_DESC buffer_desc = {
+		.ByteWidth = buffer_size,
+		.Usage = D3D11_USAGE_DEFAULT, // TODO: unhardcode this and allow to select between options
+		.BindFlags = (UINT) buffer_type,
+		.CPUAccessFlags = 0, // TODO: see '.Usage'
+		.MiscFlags = 0,
+		.StructureByteStride = 0,
+	};
+	
+	D3D11_SUBRESOURCE_DATA buffer_data = {
+		.pSysMem = buffer_internal_data,
+		.SysMemPitch = 0,
+		.SysMemSlicePitch = 0,
+	};
+	
+	ID3D11Buffer* buffer;
+	d3d_render_data.device->CreateBuffer(&buffer_desc, &buffer_data, &buffer);
+	
+	return buffer;
+}
+
+ID3D11Buffer* d3d_create_vertex_buffer(void* buffer_vertex_data, u32 buffer_size) {
+	return d3d_create_buffer(D3D11_BIND_VERTEX_BUFFER, buffer_vertex_data, buffer_size);
+}
+
+ID3D11Buffer* d3d_create_index_buffer(void* buffer_index_data, u32 buffer_size) {
+	return d3d_create_buffer(D3D11_BIND_INDEX_BUFFER, buffer_index_data, buffer_size);
+}
+
+// this should destroy any kind of buffer
+void d3d_destroy_buffer(ID3D11Buffer** buffer) {
+	ID3D11Buffer* _buffer = *buffer;
+	_buffer->Release();
+	*buffer = nullptr;
+}
+
+ID3DBlob* d3d_compile_shader(String8 shader_source, D3D_Shader_Type shader_type) {
+	ID3DBlob* shader_blob = nullptr;
+	ID3DBlob* shader_errors = nullptr;
+	u32 flags = D3DCOMPILE_OPTIMIZATION_LEVEL2;
+	
+	// 'uk' stands for 'unknown'
+	String8 entry_point = create_string_from("main_uk");
+	String8 feature_level = create_string_from("uk_5_0");
+	switch (shader_type) {
+		case D3D_Shader_Type::Vertex: {
+			assign_string(&entry_point, "main_vs");
+			assign_string(&feature_level, "vs_5_0");
+		} break;
+		
+		case D3D_Shader_Type::Pixel: {
+			assign_string(&entry_point, "main_ps");
+			assign_string(&feature_level, "ps_5_0");
+		} break;
+		
+		default: {
+			goto clean_and_exit;
+		} break;
+	}
+
+	if (D3DCompile(shader_source.data, shader_source.len, nullptr, nullptr, nullptr, entry_point.data, feature_level.data, flags, 0, &shader_blob, &shader_errors) != S_OK) {
+		goto clean_and_exit;
+	}
+	
+	clean_and_exit:
+	destroy_string(&entry_point);
+	destroy_string(&feature_level);
+	return shader_blob;
+}
+
+ID3D11VertexShader* d3d_create_vertex_shader(String8 shader_source) {
+	ID3DBlob* shader_blob = d3d_compile_shader(shader_source, D3D_Shader_Type::Vertex);
+	ID3D11VertexShader* vertex_shader = nullptr;
+	
+	d3d_render_data.device->CreateVertexShader(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), nullptr, &vertex_shader);
+	
+	return vertex_shader;
+}
+
+ID3D11PixelShader* d3d_create_pixel_shader(String8 shader_source) {
+	ID3DBlob* shader_blob = d3d_compile_shader(shader_source, D3D_Shader_Type::Pixel);
+	ID3D11PixelShader* pixel_shader = nullptr;
+	
+	d3d_render_data.device->CreatePixelShader(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), nullptr, &pixel_shader);
+	
+	return pixel_shader;
 }

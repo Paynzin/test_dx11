@@ -1,6 +1,6 @@
 #pragma once
 
-#include "defines.h"
+#include "base.h"
 #include <SDL.h>
 
 void imgui_init(SDL_Window* window);
