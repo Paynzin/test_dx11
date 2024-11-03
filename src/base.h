@@ -30,6 +30,8 @@ struct String8 {
 	c8* data;
 	u32 len;
 	usize reserved;
+
+	String8 operator=(const c8* in_string);
 };
 
 struct Allocator; // required by 'set_string_allocator()'

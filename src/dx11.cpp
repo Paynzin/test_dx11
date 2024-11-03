@@ -151,13 +151,13 @@ ID3DBlob* d3d_compile_shader(String8 shader_source, D3D_Shader_Type shader_type)
 	String8 feature_level = create_string_from("uk_5_0");
 	switch (shader_type) {
 		case D3D_Shader_Type::Vertex: {
-			assign_string(&entry_point, "main_vs");
-			assign_string(&feature_level, "vs_5_0");
+			entry_point = "main_vs";
+			feature_level = "vs_5_0";
 		} break;
 		
 		case D3D_Shader_Type::Pixel: {
-			assign_string(&entry_point, "main_ps");
-			assign_string(&feature_level, "ps_5_0");
+			entry_point, "main_ps";
+			feature_level = "ps_5_0";
 		} break;
 		
 		default: {

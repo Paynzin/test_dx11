@@ -1,6 +1,7 @@
 #include "base.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static Allocator string_allocator = {
 	.alloc = nullptr,
@@ -10,7 +11,7 @@ static Allocator string_allocator = {
 
 static void check_string_allocator() {
 	if (string_allocator.alloc == nullptr || string_allocator.realloc == nullptr || string_allocator.free == nullptr) {
-		perror("string_allocator not setted");
+		fprintf(stderr, "string_allocator not setted");
 		abort();
 	}
 }
@@ -65,4 +66,15 @@ void destroy_string(String8* string) {
 		string->data = nullptr;
 		string->len = 0;
 	}
+}
+
+String8 String8::operator=(const c8* in_string) {
+	if (reserved != 0) {
+		assign_string(this, in_string);
+	} else {
+		// FIXME: make initialization work
+		*this = create_string_from(in_string);
+	}
+
+	return *this;
 }
