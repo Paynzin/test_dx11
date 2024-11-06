@@ -78,3 +78,45 @@ String8 String8::operator=(const c8* in_string) {
 
 	return *this;
 }
+
+File read_entire_file(String8 path, Allocator allocator) {
+	File file_read = {
+		.data = nullptr,
+		.size = 0
+	};
+	usize read = 0;
+	
+	FILE* file = fopen(path.data, "rb");
+	if (file == nullptr) {
+		goto clean_and_exit;
+	}
+	
+	fseek(file, 0, SEEK_END);
+	file_read.size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	
+	file_read.data = (byte*) allocator.alloc(file_read.size);
+	read = fread(file_read.data, file_read.size, 1, file);
+	if ((read * file_read.size) != file_read.size) {
+		allocator.free(file_read.data);
+		file_read.data = nullptr;
+		file_read.size = 0;
+	}
+	
+	clean_and_exit:
+	fclose(file);
+	destroy_string(&path);
+	return file_read;
+}
+
+String8 read_entire_file_as_string(String8 path) {
+	check_string_allocator();
+	File file_read = read_entire_file(path, string_allocator);
+	String8 file_read_string = {
+		.data = (c8*) file_read.data,
+		.len = (u32) file_read.size,
+		.reserved = file_read.size
+	};
+	
+	return file_read_string;
+}

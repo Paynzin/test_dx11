@@ -47,3 +47,12 @@ struct Allocator {
 	void* (*realloc)(void* ptr, usize size);
 	void (*free)(void* ptr);
 };
+
+// utils
+struct File {
+	byte* data;
+	usize size;
+};
+
+File read_entire_file(String8 path, Allocator allocator);
+String8 read_entire_file_as_string(String8 path);
